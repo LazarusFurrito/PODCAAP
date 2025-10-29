@@ -929,10 +929,30 @@ class InformacionProyectoDialog(QDialog):
             "• PyQt5 para la interfaz gráfica\n"
             "• MariaDB para almacenamiento\n"
             "• Dispositivos de medición conectados\n\n"
+            ""
             
             "Versión: 1.17.3\n"
-            "Desarrollado por: Equipo Dinamita"
+            "Asesor:\n"
+            "============================\n"
+            "•Dr. Ruben Estrada Marmolejo\n"
+            "Desarrollado por: Equipo Dinamita\n"
+            "Isaac Alejandro García Segura\n"
+            "Luis Aguilar Gutierrez\n"
+            "Rodolfo Robledo Martínez (Caribú)\n\n"
             
+            "Agradecimientos especiales a:\n"
+            "============================\n"
+            "•Manuel Mauricio Arturo Ortiz Caloca\n"
+            "•Andres Alejandro Conde Castrillón\n"
+            "•Andrea Villagrana\n"
+            "•Pepechuy\n"
+            "•Estefanía Lazcano Tovar\n"
+            "•Dr. Jose Alejandro Morales Valencia\n"
+            "Por el pŕestamo del laboratório\n"
+            "•Oso\n"
+            "•Miguel Olide (Temach)\n"
+            "Las morras de los del equipo"
+        
         )
         layout.addWidget(info_text)
         
