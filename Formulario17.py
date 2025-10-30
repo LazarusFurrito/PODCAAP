@@ -26,7 +26,7 @@ class WorkerThread(QThread):
             
             # Ejecutar Coordenadas.py que ahora maneja todo el proceso
             result = subprocess.run(
-                ['python', 'Coordenadas5.py'], 
+                ['python', 'gemini5.py'], 
                 capture_output=True, 
                 text=True, 
                 check=True
@@ -1305,10 +1305,10 @@ class FormularioSecuencial(QDialog):
             
             # Si estamos en el campo de presión arterial y el campo de BPM ya fue mostrado,
             # actualizarlo automáticamente
-            nombre_campo_actual, clave_actual, _ = self.campos_config[self.campo_actual]
+            nombre_campo_actual, clave_actual, _ = self.campos_config[self.campo_actual][:3]
             if clave_actual == "presion":
                 # Buscar el índice del campo BPM
-                for i, (nombre, clave, _) in enumerate(self.campos_config):
+                for i, (nombre, clave, _) in enumerate([campo[:3] for campo in self.campos_config]):
                     if clave == "bpm":
                         # Actualizar el campo BPM en los datos completados
                         self.campos_completados['bpm'] = bpm
