@@ -63,7 +63,7 @@ def analizar_imagen_gemini(image_path):
 
 def procesar_imagen():
     # URL de la foto instantánea
-    url = "http://10.214.155.131:8080/photo.jpg"
+    url = "http://10.214.59.73:8080/photo.jpg"
 
     # Descargar la imagen
     r = requests.get(url)

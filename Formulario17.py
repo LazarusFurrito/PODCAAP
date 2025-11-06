@@ -209,7 +209,7 @@ class DatabaseManager:
         """Guarda los datos del paciente en la base de datos"""
         if not self.connection:
             return False, "No hay conexión a la base de datos"
-    
+
         try:
             with self.connection.cursor() as cursor:
                 sql = """
@@ -226,7 +226,7 @@ class DatabaseManager:
                 cintura = datos_paciente.get('waist') or datos_paciente.get('cintura')
                 cadera = datos_paciente.get('hip') or datos_paciente.get('cadera')
                 presion = datos_paciente.get('presion') or datos_paciente.get('presion_arterial')
-                spo2 = datos_paciente.get('spo2')  # <- Agregar esta línea
+                spo2 = datos_paciente.get('spo2', 'N/A')  # <- Valor por defecto si no existe
             
                 cursor.execute(sql, (
                     datos_paciente['id_registro'],
@@ -239,7 +239,7 @@ class DatabaseManager:
                     cadera,
                     presion,
                     datos_paciente.get('bpm', 'N/A'),
-                    spo2  # <- Agregar esta línea
+                    spo2  # <- Este es el parámetro 11
                 ))
             
                 self.connection.commit()
@@ -298,7 +298,8 @@ class DatabaseManager:
                 sql = """
                 UPDATE pacientes SET 
                     nombres = %s, apellidos = %s, altura = %s, peso = %s,
-                    temperatura = %s, cintura = %s, cadera = %s, presion_arterial = %s, bpm = %s
+                    temperatura = %s, cintura = %s, cadera = %s, 
+                    presion_arterial = %s, bpm = %s, spo2 = %s
                 WHERE id_registro = %s
                 """
                 
@@ -320,8 +321,8 @@ class DatabaseManager:
                     cadera,
                     presion,
                     datos_actualizados.get('bpm', 'N/A'),
-                    spo2,
-                    id_registro
+                    spo2,  # <- Este es el parámetro 10
+                    id_registro  # <- Este es el parámetro 11
                 ))
                 
                 self.connection.commit()
@@ -931,10 +932,10 @@ class InformacionProyectoDialog(QDialog):
             "• Dispositivos de medición conectados\n\n"
             ""
             
-            "Versión: 1.17.3\n"
+            "Versión: 1.17.3\n\n\n"
             "Asesor:\n"
             "============================\n"
-            "•Dr. Ruben Estrada Marmolejo\n"
+            "•Dr. Ruben Estrada Marmolejo\n\n\n"
             "Desarrollado por: Equipo Dinamita\n"
             "Isaac Alejandro García Segura\n"
             "Luis Aguilar Gutierrez\n"
@@ -942,16 +943,18 @@ class InformacionProyectoDialog(QDialog):
             
             "Agradecimientos especiales a:\n"
             "============================\n"
-            "•Manuel Mauricio Arturo Ortiz Caloca\n"
+            "•ING. Manuel Mauricio Arturo Ortiz Caloca\n"
             "•Andres Alejandro Conde Castrillón\n"
             "•Andrea Villagrana\n"
             "•Pepechuy\n"
             "•Estefanía Lazcano Tovar\n"
-            "•Dr. Jose Alejandro Morales Valencia\n"
+            "•Dr. José Alejandro Morales Valencia\n"
             "Por el pŕestamo del laboratório\n"
             "•Oso\n"
             "•Miguel Olide (Temach)\n"
-            "Las morras de los del equipo"
+            "•Cristopher Eduardo González Covarrubias\n"
+            "•Las morras de los del equipo\n"
+              "Chinguen a su madre todos"
         
         )
         layout.addWidget(info_text)

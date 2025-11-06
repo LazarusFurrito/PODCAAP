@@ -1,5 +1,5 @@
-from Bascula2 import leer_peso_kg_simple
+from Bascula2 import leer_peso_promediado
 
-# Solo llamar esta función
-peso = leer_peso_kg_simple()
+# Ejecutar automáticamente las 100 mediciones y obtener promedio
+peso = leer_peso_promediado(100)
 print(f"Peso: {peso:.2f} kg")

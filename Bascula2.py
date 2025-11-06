@@ -1,98 +1,102 @@
 import lgpio
 import time
 
-def leer_peso_kg_simple():
-    """
-    Versión simple que solo lee el peso en KG con 100 muestras
-    """
-    # Configuración de pines
-    DOUT_PIN = 5
-    PD_SCK_PIN = 6
-    
-    # Factor de corrección basado en tus datos
-    # 97kg real = 2318.39g leído → factor = 2318.39 / 97 = 23.89
-    FACTOR_CORRECCION = 23.89
-    
-    try:
-        # Inicializar HX711
-        h = lgpio.gpiochip_open(0)
-        lgpio.gpio_claim_input(h, DOUT_PIN)
-        lgpio.gpio_claim_output(h, PD_SCK_PIN)
-        
-        print("Realizando 100 lecturas en 10 segundos...")
-        lecturas_kg = []
-        inicio = time.time()
-        
-        for i in range(100):
-            try:
-                # Esperar hasta que el sensor esté listo
-                timeout = time.time() + 0.5
-                while lgpio.gpio_read(h, DOUT_PIN) != 0:
-                    if time.time() > timeout:
-                        raise Exception("Timeout")
-                    time.sleep(0.001)
-                
-                # Leer los 24 bits de datos
-                data = 0
-                for j in range(24):
-                    lgpio.gpio_write(h, PD_SCK_PIN, 1)
-                    lgpio.gpio_write(h, PD_SCK_PIN, 0)
-                    bit = lgpio.gpio_read(h, DOUT_PIN)
-                    data = (data << 1) | bit
-                
-                # Configurar ganancia
-                for j in range(128):
-                    lgpio.gpio_write(h, PD_SCK_PIN, 1)
-                    lgpio.gpio_write(h, PD_SCK_PIN, 0)
-                
-                # Convertir a signed integer
-                if data & 0x800000:
-                    data = data - 0x1000000
-                
-                # Aplicar corrección directa a KG
-                peso_kg = (data / FACTOR_CORRECCION) / 1000.0
-                peso_kg = max(0, peso_kg)  # Evitar negativos
-                
-                lecturas_kg.append(peso_kg)
-                
-                # Mostrar progreso
-                if (i + 1) % 10 == 0:
-                    print(f"Lectura {i+1}/100 completada")
-                
-                # Controlar tiempo total
-                transcurrido = time.time() - inicio
-                tiempo_restante = 10.0 - transcurrido
-                if tiempo_restante > 0 and i < 99:
-                    tiempo_espera = tiempo_restante / (100 - i - 1)
-                    time.sleep(min(tiempo_espera, 0.1))
-                    
-            except Exception as e:
-                print(f"Error en lectura {i+1}: {e}")
-                continue
-        
-        # Calcular resultado
-        if lecturas_kg:
-            promedio_kg = sum(lecturas_kg) / len(lecturas_kg)
-            tiempo_total = time.time() - inicio
-            print(f"Tiempo total: {tiempo_total:.2f}s")
-            print(f"Lecturas válidas: {len(lecturas_kg)}/100")
-            return round(promedio_kg, 2)
-        else:
-            return None
-            
-    except Exception as e:
-        print(f"Error general: {e}")
-        return None
-    finally:
-        try:
-            lgpio.gpiochip_close(h)
-        except:
-            pass
+# Pines
+DOUT = 5
+SCK = 6
 
-# Uso directo
-if __name__ == "__main__":
-    peso = leer_peso_kg_simple()
-    if peso is not None:
-        print(f"\nRESULTADO: {peso:.2f} kg")
+# Valores de calibración predefinidos (usa tus valores reales)
+OFFSET = 131640  # Tu offset anterior que funciona
+CALIBRATION_FACTOR = 23000.0  # Ajusta este valor según necesites
+
+# Crear handle para GPIO
+h = lgpio.gpiochip_open(0)
+lgpio.gpio_claim_input(h, DOUT)
+lgpio.gpio_claim_output(h, SCK)
+
+def read_raw():
+    """Lee 24 bits del HX711 (modo canal A, ganancia 128)."""
+    # Esperar a que el HX711 esté listo (DOUT = LOW)
+    while lgpio.gpio_read(h, DOUT) == 1:
+        time.sleep(0.001)
+
+    count = 0
+    # Leer 24 bits
+    for _ in range(24):
+        lgpio.gpio_write(h, SCK, 1)
+        count = (count << 1) | lgpio.gpio_read(h, DOUT)
+        lgpio.gpio_write(h, SCK, 0)
+
+    # Un pulso extra para seleccionar canal A (ganancia 128)
+    lgpio.gpio_write(h, SCK, 1)
+    lgpio.gpio_write(h, SCK, 0)
+
+    # Convertir a número con signo (24 bits)
+    if count & 0x800000:
+        count -= 0x1000000
+
+    return count
+
+def leer_peso_promediado(mediciones=100):
+    """Toma múltiples mediciones y devuelve el promedio automáticamente."""
+    print(f"Iniciando medición automática de {mediciones} muestras...")
+    
+    pesos = []
+    raw_values = []
+    
+    for i in range(mediciones):
+        try:
+            raw_val = read_raw()
+            peso = (raw_val - OFFSET) / CALIBRATION_FACTOR
+            
+            pesos.append(peso)
+            raw_values.append(raw_val)
+            
+            # Mostrar progreso
+            if (i + 1) % 20 == 0:
+                print(f"Progreso: {i + 1}/{mediciones} mediciones")
+            
+            time.sleep(0.05)  # Pausa corta entre mediciones
+            
+        except Exception as e:
+            print(f"Error en medición {i + 1}: {e}")
+    
+    if pesos:
+        # Calcular resultados
+        peso_promedio = sum(pesos) / len(pesos)
+        raw_promedio = sum(raw_values) / len(raw_values)
+        
+        # Calcular precisión
+        diferencia_max = max(pesos) - min(pesos)
+        
+        print(f"\n=== RESULTADOS ===")
+        print(f"Raw promedio: {raw_promedio:.0f}")
+        print(f"Peso promedio: {peso_promedio:.4f} kg")
+        print(f"Rango de variación: {diferencia_max:.4f} kg")
+        print(f"Offset usado: {OFFSET}")
+        print(f"Factor usado: {CALIBRATION_FACTOR}")
+        
+        return peso_promedio
     else:
-        print("Error en la medición")
+        print("❌ No se pudieron completar las mediciones")
+        return 0.0
+
+# --- Ejecución automática al iniciar ---
+if __name__ == "__main__":
+    try:
+        # Tomar 100 mediciones automáticamente y obtener promedio
+        peso_final = leer_peso_promediado(100)
+        
+        # Mostrar resultado final (lo que espera Bascula3.py)
+        print(f"\n✅ Peso final: {peso_final:.3f} kg")
+        
+    except Exception as e:
+        print(f"Error durante la medición: {e}")
+        peso_final = 0.0
+    
+    finally:
+        # Limpiar GPIO
+        lgpio.gpiochip_close(h)
+    
+    # El valor queda disponible para ser importado
+    # o se imprime como requiere Bascula3.py
